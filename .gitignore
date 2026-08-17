@@ -39,3 +39,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ── JobPilot: local data & secrets (never commit) ──
+/data/
+/secrets/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+token.json
+credentials.json
+.env
+.env.local
+
+# keep the example env file
+!.env.example
