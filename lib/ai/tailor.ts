@@ -71,7 +71,8 @@ export async function tailorResume(
       system: SYSTEM,
       user: buildUser(profile, requirements, job, previousErrors),
       schema: tailoredProfileSchema,
-      maxTokens: 16_000,
+      // Sonnet thinks by default and max_tokens covers thinking + JSON; leave headroom.
+      maxTokens: 24_000,
       effort: "medium",
       mock: () => mockTailored(profile, requirements),
     });

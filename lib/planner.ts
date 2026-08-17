@@ -9,6 +9,15 @@ export type BuildPlanResult = { ok: true; planId: string; items: number } | { ok
 
 /** Replaces any existing plan for the application. */
 export async function buildPlanForApplication(applicationId: string): Promise<BuildPlanResult> {
+  try {
+    return await buildPlanUnsafe(applicationId);
+  } catch (err) {
+    console.error("[planner] build failed:", err);
+    return { ok: false, error: err instanceof Error ? err.message : "Plan generation failed" };
+  }
+}
+
+async function buildPlanUnsafe(applicationId: string): Promise<BuildPlanResult> {
   const app = getApplication(applicationId);
   if (!app) return { ok: false, error: "Application not found" };
   const master = getMasterProfile();

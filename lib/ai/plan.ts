@@ -69,7 +69,7 @@ export async function generatePlan(input: {
     system: SYSTEM,
     user,
     schema: planSchema,
-    maxTokens: 8000,
+    maxTokens: 12_000,
     effort: "medium",
     mock: () => mockPlan(input.gaps, roleFamily),
   });

@@ -41,9 +41,11 @@ async function extractAndScore(applicationId: string, jdText: string): Promise<v
     // SPEC §6.4: a weak fit triggers a learning plan. Runs in the background so
     // creation stays fast; the detail page shows it once it lands.
     if (fit && fit.score !== null && fit.score < getSettings().planThreshold && fit.gaps.length > 0) {
-      void buildPlanForApplication(applicationId).then((r) => {
-        if (!r.ok) console.warn(`[createApplication] plan generation skipped: ${r.error}`);
-      });
+      buildPlanForApplication(applicationId)
+        .then((r) => {
+          if (!r.ok) console.warn(`[createApplication] plan generation skipped: ${r.error}`);
+        })
+        .catch((err) => console.error("[createApplication] plan generation failed:", err));
     }
   } catch (err) {
     console.error("[createApplication] JD extraction failed", err);

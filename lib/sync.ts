@@ -130,10 +130,22 @@ async function doRun({ trigger, source }: { trigger: SyncTrigger; source?: Email
     console.error("[sync] run failed:", err);
   }
 
-  summary.ghostedChanged = refreshGhostFlags();
+  // Bookkeeping is best-effort too: runSync must always resolve with a summary
+  // (it is fired-and-forgotten from page loads; a rejection would be unhandled).
+  try {
+    summary.ghostedChanged = refreshGhostFlags();
+  } catch (err) {
+    summary.errors.push(`ghost flags: ${err instanceof Error ? err.message : String(err)}`);
+    console.error("[sync] ghost-flag refresh failed:", err);
+  }
   summary.finishedAt = new Date().toISOString();
-  setKv(KV_LAST_SYNC_AT, summary.finishedAt);
-  setKv(KV_LAST_SYNC_SUMMARY, JSON.stringify(summary));
+  try {
+    setKv(KV_LAST_SYNC_AT, summary.finishedAt);
+    setKv(KV_LAST_SYNC_SUMMARY, JSON.stringify(summary));
+  } catch (err) {
+    summary.errors.push(`kv: ${err instanceof Error ? err.message : String(err)}`);
+    console.error("[sync] could not record sync bookkeeping:", err);
+  }
   console.log(
     `[sync] ${trigger}/${summary.source}/${summary.mode}: fetched ${summary.fetched} / kept ${summary.kept} / auto-applied ${summary.autoApplied} / queued ${summary.queued} / linked ${summary.linked} / noise ${summary.noise}` +
       (summary.ghostedChanged ? ` / ghost flags changed ${summary.ghostedChanged}` : "") +

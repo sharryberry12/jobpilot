@@ -51,6 +51,6 @@ export function maybeSyncStale(): boolean {
   if (isSyncRunning()) return false;
   const last = lastSyncAt();
   if (last && Date.now() - new Date(last).getTime() < pollMs()) return false;
-  void runSync({ trigger: "stale-load" });
+  runSync({ trigger: "stale-load" }).catch((err) => console.error("[scheduler] stale-load sync failed:", err));
   return true;
 }
