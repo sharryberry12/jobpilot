@@ -1,0 +1,15 @@
+{
+  "summary": "Frontend engineer focused on React and TypeScript.",
+  "skills": [ { "source_id": "sk_typescript" }, { "source_id": "sk_react" }, { "source_id": "sk_jest" } ],
+  "experience": [
+    {
+      "source_id": "ex_1",
+      "bullets": [
+        { "source_id": "b_1", "text": "Delivered the customer-facing dashboard (React + TypeScript) serving 12,000 monthly users." },
+        { "source_id": "b_3", "text": "Covered the checkout flow with Jest and Testing Library suites." }
+      ]
+    },
+    { "source_id": "ex_2", "bullets": [ { "source_id": "b_4", "text": "Maintained a REST API in Node.js on PostgreSQL." } ] }
+  ],
+  "projects": [ { "source_id": "pr_1", "bullets": [ { "source_id": "b_9", "text": "Built a React budget tracker with offline sync (IndexedDB)." } ] } ]
+}

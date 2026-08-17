@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, Ghost, MapPin } from "lucide-react";
-import { FitBadge } from "@/components/fit-badge";
+import { FitCard } from "@/components/fit-card";
 import { StatusControls } from "@/components/status-controls";
+import { TailorPanel } from "@/components/tailor-panel";
 import { Timeline } from "@/components/timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getApplication, getTimeline } from "@/lib/applications";
+import { hasApiKey } from "@/lib/claude";
 import { STATUS_META, fmtDate, statusLabel } from "@/lib/format";
+import { getMasterProfile, getRequirements, getStoredFit, listResumeVersions } from "@/lib/resume";
 import { cn } from "@/lib/utils";
 
 export async function generateMetadata({ params }: PageProps<"/applications/[id]">): Promise<Metadata> {
@@ -22,6 +25,11 @@ export default async function ApplicationDetailPage({ params }: PageProps<"/appl
   if (!app) notFound();
   const events = getTimeline(id);
   const meta = STATUS_META[app.status];
+  const master = getMasterProfile();
+  const requirements = getRequirements(id);
+  const fit = getStoredFit(app.fitJson);
+  const versions = listResumeVersions(id);
+  const apiKey = hasApiKey();
 
   return (
     <div className="space-y-6">
@@ -93,6 +101,25 @@ export default async function ApplicationDetailPage({ params }: PageProps<"/appl
 
           <Card>
             <CardHeader>
+              <CardTitle>Tailored resume</CardTitle>
+              <CardDescription>
+                Rephrased and reordered from your master profile — never invented. Review each bullet, then approve to
+                generate a DOCX.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TailorPanel
+                applicationId={app.id}
+                versions={versions}
+                master={master?.profile ?? null}
+                hasApiKey={apiKey}
+                currentVersionId={app.resumeVersionId}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Job description</CardTitle>
             </CardHeader>
             <CardContent>
@@ -109,22 +136,14 @@ export default async function ApplicationDetailPage({ params }: PageProps<"/appl
               <CardTitle>Fit</CardTitle>
               <CardDescription>Deterministic match against extracted requirements.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <FitBadge score={app.fitScore} />
-              {app.fitScore === null && (
-                <p className="text-sm text-muted-foreground">
-                  Upload your master resume to enable requirement extraction and fit scoring.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Resume version</CardTitle>
-            </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">No tailored resume yet.</p>
+              <FitCard
+                applicationId={app.id}
+                fit={fit}
+                requirements={requirements}
+                hasMaster={master !== null}
+                hasApiKey={apiKey}
+              />
             </CardContent>
           </Card>
 

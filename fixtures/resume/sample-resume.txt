@@ -1,0 +1,19 @@
+Sam Example
+Frontend engineer with 4 years building React products for consumer and B2B teams.
+sam@example.com · Sydney · https://github.com/samexample
+
+SKILLS
+React, TypeScript, Node.js, PostgreSQL, Jest, Testing Library, Tailwind, GraphQL
+
+EXPERIENCE
+Northwind — Frontend Engineer (2022-03 – present)
+- Built the customer dashboard in React and TypeScript, used by 12,000 monthly users.
+- Cut page load time by 40% by code-splitting routes and lazy-loading charts.
+- Wrote Jest and Testing Library suites covering the checkout flow.
+
+Contoso — Junior Developer (2020-01 – 2022-02)
+- Maintained a Node.js REST API backed by PostgreSQL.
+- Migrated the build from Webpack to Vite, halving CI time.
+
+EDUCATION
+UNSW — BSc Computer Science (2016 – 2019)

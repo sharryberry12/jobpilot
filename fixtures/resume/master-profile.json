@@ -1,0 +1,32 @@
+{
+  "basics": { "name": "Sam Example", "email": "sam@example.com", "phone": "", "location": "Sydney", "links": ["https://github.com/samexample"] },
+  "summary": "Frontend engineer with 4 years building React products.",
+  "skills": [
+    { "id": "sk_react", "name": "React", "level": "used in production" },
+    { "id": "sk_typescript", "name": "TypeScript", "level": "used in production" },
+    { "id": "sk_nodejs", "name": "Node.js", "level": "used in production" },
+    { "id": "sk_postgresql", "name": "PostgreSQL", "level": "familiar" },
+    { "id": "sk_jest", "name": "Jest", "level": "used in production" }
+  ],
+  "experience": [
+    {
+      "id": "ex_1", "company": "Northwind", "title": "Frontend Engineer", "start": "2022-03", "end": "present",
+      "bullets": [
+        { "id": "b_1", "text": "Built the customer dashboard in React and TypeScript, used by 12,000 monthly users." },
+        { "id": "b_2", "text": "Cut page load time by 40% by code-splitting routes and lazy-loading charts." },
+        { "id": "b_3", "text": "Wrote Jest and Testing Library suites covering the checkout flow." }
+      ]
+    },
+    {
+      "id": "ex_2", "company": "Contoso", "title": "Junior Developer", "start": "2020-01", "end": "2022-02",
+      "bullets": [
+        { "id": "b_4", "text": "Maintained a Node.js REST API backed by PostgreSQL." }
+      ]
+    }
+  ],
+  "projects": [
+    { "id": "pr_1", "name": "Budget tracker", "bullets": [ { "id": "b_9", "text": "Side project: React app with offline sync via IndexedDB." } ] }
+  ],
+  "education": [ { "id": "ed_1", "institution": "UNSW", "degree": "BSc Computer Science", "start": "2016", "end": "2019", "detail": "" } ],
+  "certs": []
+}

@@ -16,6 +16,30 @@ import {
   statusSchema,
 } from "@/lib/validation";
 import type { Status } from "@/lib/stateMachine";
+import { extractRequirements } from "@/lib/ai/jd";
+import { hasApiKey } from "@/lib/claude";
+import { getMasterProfile, refreshFit, saveRequirements } from "@/lib/resume";
+
+/**
+ * SPEC §6.2: JD extraction runs on application create. Best-effort — a failed
+ * AI call must never block creating the application (the detail page offers a
+ * retry button).
+ */
+async function extractAndScore(applicationId: string, jdText: string): Promise<void> {
+  const master = getMasterProfile();
+  if (!master || !hasApiKey()) return;
+  try {
+    const result = await extractRequirements(jdText, master.profile);
+    if (!result.ok) {
+      console.warn(`[createApplication] JD extraction skipped: ${result.error}`);
+      return;
+    }
+    saveRequirements(applicationId, result.data);
+    refreshFit(applicationId);
+  } catch (err) {
+    console.error("[createApplication] JD extraction failed", err);
+  }
+}
 
 export type FormState = {
   errors?: Record<string, string>;
@@ -40,6 +64,7 @@ export async function createApplicationAction(
       values: raw,
     };
   }
+  await extractAndScore(id, parsed.data.jdText);
   revalidatePath("/");
   redirect(`/applications/${id}`);
 }

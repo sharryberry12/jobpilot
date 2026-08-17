@@ -7,7 +7,7 @@ The full build specification lives in [`SPEC.md`](./SPEC.md). Build phases are e
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
 | P1 | Tracker: schema, state machine, CRUD, kanban, detail page, seed | done |
-| P2 | Resume engine: upload/parse, JD extraction, fit score, tailoring + DOCX | pending |
+| P2 | Resume engine: upload/parse, JD extraction, fit score, tailoring + DOCX | done |
 | P3 | Email pipeline: Gmail auth, sync scheduler, prefilter, classifier, review queue | pending |
 | P4 | Skill planner | pending |
 | P5 | Polish: notifications, backup, settings, empty states | pending |
@@ -32,7 +32,7 @@ The dev server binds to `127.0.0.1` only. All data lives in `data/` (SQLite, upl
 | Script | What it does |
 | ------ | ------------ |
 | `npm run dev` / `build` / `start` | Next.js dev server / production build / production server |
-| `npm test` | Vitest: state machine, data layer (more suites arrive per phase) |
+| `npm test` | Vitest: state machine, data layer, fit score, tailoring validator |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm run seed` | Insert 5 sample applications (idempotent) |
@@ -40,12 +40,22 @@ The dev server binds to `127.0.0.1` only. All data lives in `data/` (SQLite, upl
 | `npm run db:migrate` | Apply migrations (also happens automatically on app boot) |
 | `npm run db:studio` | Drizzle Studio for poking at the database |
 
+## AI features and the API key
+
+Resume normalisation, JD extraction and tailoring call the Anthropic API (`ANTHROPIC_API_KEY` in `.env`). Haiku 4.5 handles classification/extraction (`temperature: 0`); Sonnet 5 handles tailoring and plans. Override the model ids with `CLAUDE_FAST_MODEL` / `CLAUDE_SMART_MODEL`.
+
+For offline development, `JOBPILOT_MOCK_AI=1` swaps every AI call for a deterministic local stand-in (keyword extraction, verbatim tailoring) so all screens can be exercised without a key or spend.
+
+Tailoring is guarded by `lib/validate.ts`: every bullet must cite a `source_id` from the master profile, and a bullet that adds a technology or number absent from its source is rejected. On failure the tailor regenerates once with the errors fed back, then surfaces the failure in the UI — it is never bypassed.
+
 ## Layout
 
 ```
 app/            Next.js routes (board, applications, review, resume, plans, settings) + server actions
 components/     UI (kanban board, forms, timeline, shadcn/ui primitives)
 lib/            db schema + connection, state machine, data access, validation, config
+lib/ai/         Claude features: resume normaliser, JD extractor, tailor (+ offline mocks)
+fixtures/       resume + tailoring fixtures (incl. the deliberately fabricated one the validator must reject)
 drizzle/        SQL migrations (committed)
 scripts/        one-shot CLIs: seed, migrate (sync/gmail:auth/eval arrive with P3)
 data/           gitignored: jobpilot.db, uploads/, out/

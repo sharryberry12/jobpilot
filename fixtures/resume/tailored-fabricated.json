@@ -1,0 +1,15 @@
+{
+  "summary": "Frontend engineer focused on React and TypeScript.",
+  "skills": [ { "source_id": "sk_react" }, { "source_id": "sk_typescript" } ],
+  "experience": [
+    {
+      "source_id": "ex_1",
+      "bullets": [
+        { "source_id": "b_1", "text": "Built the customer dashboard in React, TypeScript and GraphQL, used by 12,000 monthly users." },
+        { "source_id": "b_2", "text": "Cut page load time by 65% by code-splitting routes and lazy-loading charts." },
+        { "source_id": "b_404", "text": "Led a team of five engineers." }
+      ]
+    }
+  ],
+  "projects": []
+}
