@@ -1,0 +1,13 @@
+{
+  "id": "fx_12-interview-round2-northwind",
+  "threadId": "t_12-interview-round2-northwind",
+  "from": "Northwind Talent <talent@northwindanalytics.com>",
+  "subject": "Next steps: technical interview",
+  "date": "2026-08-08T09:00:00.000Z",
+  "body": "Hi Sam,\n\nThanks for a great conversation last week. We'd like to invite you to the next round - a 60 minute technical interview for the Frontend Engineer role at Northwind Analytics. Please choose a time: https://cal.example/nw\n\nNorthwind Talent",
+  "expected": {
+    "prefilter": true,
+    "application": "Northwind Analytics",
+    "event": "interview_invite"
+  }
+}

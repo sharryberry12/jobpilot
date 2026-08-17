@@ -1,0 +1,13 @@
+{
+  "id": "fx_10-job-alert-seek",
+  "threadId": "t_10-job-alert-seek",
+  "from": "SEEK <noreply@seek.com.au>",
+  "subject": "New jobs matching Frontend Engineer",
+  "date": "2026-08-10T07:00:00.000Z",
+  "body": "Here are today's new jobs matching your saved search Frontend Engineer. View all jobs. Manage your job alert.",
+  "expected": {
+    "prefilter": true,
+    "application": null,
+    "event": "other"
+  }
+}

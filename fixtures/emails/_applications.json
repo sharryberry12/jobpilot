@@ -1,0 +1,38 @@
+[
+  {
+    "id": "app_northwind",
+    "company": "Northwind Analytics",
+    "roleTitle": "Frontend Engineer",
+    "status": "interview",
+    "appliedAt": "2026-07-30"
+  },
+  {
+    "id": "app_harbour",
+    "company": "Harbour Health",
+    "roleTitle": "Full-Stack Developer",
+    "status": "offer",
+    "appliedAt": "2026-07-18",
+    "companyDomains": "harbourhealth.com.au"
+  },
+  {
+    "id": "app_kestrel",
+    "company": "Kestrel Robotics",
+    "roleTitle": "Software Engineer, Platform",
+    "status": "applied",
+    "appliedAt": "2026-07-08"
+  },
+  {
+    "id": "app_bluegum",
+    "company": "Bluegum Bank",
+    "roleTitle": "Software Engineer (Graduate / Junior)",
+    "status": "applied",
+    "appliedAt": "2026-08-12"
+  },
+  {
+    "id": "app_sundial",
+    "company": "Sundial Media",
+    "roleTitle": "React Developer (Contract)",
+    "status": "assessment",
+    "appliedAt": "2026-07-22"
+  }
+]

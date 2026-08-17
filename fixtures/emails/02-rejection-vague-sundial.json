@@ -1,0 +1,13 @@
+{
+  "id": "fx_02-rejection-vague-sundial",
+  "threadId": "t_02-rejection-vague-sundial",
+  "from": "Sundial Media via Lever <no-reply@hire.lever.co>",
+  "subject": "Thank you for your interest in Sundial Media",
+  "date": "2026-08-14T09:00:00.000Z",
+  "body": "Hello Sam,\n\nThanks so much for your interest in the React Developer (Contract) position at Sundial Media and for the time you invested in the exercise. We received a very strong pool of applicants and have decided to move forward with other candidates whose experience more closely matches our current needs.\n\nWe will keep your details on file.\n\nSundial Media Hiring",
+  "expected": {
+    "prefilter": true,
+    "application": "Sundial Media",
+    "event": "rejected"
+  }
+}

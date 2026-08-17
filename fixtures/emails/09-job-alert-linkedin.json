@@ -1,0 +1,13 @@
+{
+  "id": "fx_09-job-alert-linkedin",
+  "threadId": "t_09-job-alert-linkedin",
+  "from": "LinkedIn Job Alerts <jobalerts-noreply@linkedin.com>",
+  "subject": "10 new jobs for \"frontend engineer\" in Sydney",
+  "date": "2026-08-10T09:00:00.000Z",
+  "body": "New jobs for you:\n- Frontend Engineer at Someco\n- React Developer at Otherco\n... Unsubscribe from these alerts.",
+  "expected": {
+    "prefilter": true,
+    "application": null,
+    "event": "other"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "fx_04-assessment-bluegum",
+  "threadId": "t_04-assessment-bluegum",
+  "from": "Bluegum Bank Careers <bluegum@myworkday.com>",
+  "subject": "Your online assessment for Bluegum Bank",
+  "date": "2026-08-13T09:00:00.000Z",
+  "body": "Hi Sam,\n\nAs the next step for the Software Engineer (Graduate / Junior) application at Bluegum Bank, please complete the online coding assessment within 5 days.\n\nStart here: https://hackerrank.example/t/xyz\n\nGood luck!\nBluegum Bank Talent Acquisition",
+  "expected": {
+    "prefilter": true,
+    "application": "Bluegum Bank",
+    "event": "assessment_invite"
+  }
+}

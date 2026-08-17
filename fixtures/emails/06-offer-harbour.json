@@ -1,0 +1,13 @@
+{
+  "id": "fx_06-offer-harbour",
+  "threadId": "t_06-offer-harbour",
+  "from": "Priya at Harbour Health <priya@harbourhealth.com.au>",
+  "subject": "Offer of employment - Full-Stack Developer",
+  "date": "2026-08-16T08:00:00.000Z",
+  "body": "Hi Sam,\n\nGreat news - we would like to extend you an offer for the Full-Stack Developer position at Harbour Health. The attached letter sets out salary, start date and benefits. Let us know by Friday.\n\nWarmly,\nPriya",
+  "expected": {
+    "prefilter": true,
+    "application": "Harbour Health",
+    "event": "offer"
+  }
+}

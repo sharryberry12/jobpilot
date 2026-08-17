@@ -1,0 +1,13 @@
+{
+  "id": "fx_07-screening-northwind-backward",
+  "threadId": "t_07-screening-northwind-backward",
+  "from": "Northwind Recruiting <no-reply@greenhouse.io>",
+  "subject": "Quick intro call about the Frontend Engineer role?",
+  "date": "2026-08-12T09:00:00.000Z",
+  "body": "Hi Sam,\n\nI'm a recruiter at Northwind Analytics. Would you have 20 minutes this week for a quick screening chat about your Frontend Engineer application?\n\nThanks,\nJordan",
+  "expected": {
+    "prefilter": true,
+    "application": "Northwind Analytics",
+    "event": "screening"
+  }
+}

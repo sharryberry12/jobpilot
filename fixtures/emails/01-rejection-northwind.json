@@ -1,0 +1,13 @@
+{
+  "id": "fx_01-rejection-northwind",
+  "threadId": "t_01-rejection-northwind",
+  "from": "Northwind Talent <talent@northwindanalytics.com>",
+  "subject": "Update on your application",
+  "date": "2026-08-15T09:00:00.000Z",
+  "body": "Hi Sam,\n\nThank you for taking the time to interview with Northwind Analytics for the Frontend Engineer role. After careful consideration we have decided not to move forward with your application at this stage.\n\nWe were impressed by your work and encourage you to apply for future openings.\n\nBest,\nNorthwind Talent Team",
+  "expected": {
+    "prefilter": true,
+    "application": "Northwind Analytics",
+    "event": "rejected"
+  }
+}

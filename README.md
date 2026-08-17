@@ -8,7 +8,7 @@ The full build specification lives in [`SPEC.md`](./SPEC.md). Build phases are e
 | ----- | ----- | ------ |
 | P1 | Tracker: schema, state machine, CRUD, kanban, detail page, seed | done |
 | P2 | Resume engine: upload/parse, JD extraction, fit score, tailoring + DOCX | done |
-| P3 | Email pipeline: Gmail auth, sync scheduler, prefilter, classifier, review queue | pending |
+| P3 | Email pipeline: Gmail auth, sync scheduler, prefilter, classifier, review queue | done |
 | P4 | Skill planner | pending |
 | P5 | Polish: notifications, backup, settings, empty states | pending |
 
@@ -32,10 +32,13 @@ The dev server binds to `127.0.0.1` only. All data lives in `data/` (SQLite, upl
 | Script | What it does |
 | ------ | ------------ |
 | `npm run dev` / `build` / `start` | Next.js dev server / production build / production server |
-| `npm test` | Vitest: state machine, data layer, fit score, tailoring validator |
+| `npm test` | Vitest: state machine, data layer, fit score, tailoring validator, prefilter |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm run seed` | Insert 5 sample applications (idempotent) |
+| `npm run gmail:auth` | One-time Google OAuth (desktop loopback flow, `gmail.readonly` only) → `secrets/token.json` |
+| `npm run sync` | One-shot sync cycle against your inbox; `-- --fixtures` runs the pipeline over `fixtures/emails/` instead |
+| `npm run eval:classifier` | Prefilter + classifier over the email fixtures; prints expected vs got and accuracy |
 | `npm run db:generate` | Generate a new Drizzle migration after editing `lib/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations (also happens automatically on app boot) |
 | `npm run db:studio` | Drizzle Studio for poking at the database |
@@ -48,14 +51,21 @@ For offline development, `JOBPILOT_MOCK_AI=1` swaps every AI call for a determin
 
 Tailoring is guarded by `lib/validate.ts`: every bullet must cite a `source_id` from the master profile, and a bullet that adds a technology or number absent from its source is rejected. On failure the tailor regenerates once with the errors fed back, then surfaces the failure in the UI — it is never bypassed.
 
+## Gmail sync
+
+One-time setup is in SPEC.md §8 (Google Cloud project → Gmail API → Desktop-app OAuth client → `secrets/credentials.json` → `npm run gmail:auth`). The app only ever requests the read-only scope and never drafts or sends mail.
+
+Sync runs in-process: on boot, when the board loads and the last run is older than `POLL_MINUTES`, on a `POLL_MINUTES` timer, and from the **Sync now** button. Each run: `history.list` since the stored history id (falling back to a 60-day `messages.list`) → skip known ids → prefilter (ATS domains, company domains, company mentions, subject keywords) → store → Haiku classifier → auto-apply when confidence ≥ `AUTO_APPLY_CONFIDENCE` **and** the state machine allows the move, otherwise the review queue. Corrections made in `/review` are fed back to the classifier as few-shot examples. Ghost flags are refreshed every run.
+
 ## Layout
 
 ```
 app/            Next.js routes (board, applications, review, resume, plans, settings) + server actions
 components/     UI (kanban board, forms, timeline, shadcn/ui primitives)
 lib/            db schema + connection, state machine, data access, validation, config
-lib/ai/         Claude features: resume normaliser, JD extractor, tailor (+ offline mocks)
-fixtures/       resume + tailoring fixtures (incl. the deliberately fabricated one the validator must reject)
+lib/ai/         Claude features: resume normaliser, JD extractor, tailor, email classifier (+ offline mocks)
+lib/sync.ts     the sync run; lib/gmail.ts Gmail access; lib/prefilter.ts; lib/scheduler.ts + instrumentation.ts
+fixtures/       resume + tailoring fixtures; fixtures/emails/*.json synthetic inbox for eval + --fixtures sync
 drizzle/        SQL migrations (committed)
 scripts/        one-shot CLIs: seed, migrate (sync/gmail:auth/eval arrive with P3)
 data/           gitignored: jobpilot.db, uploads/, out/

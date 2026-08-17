@@ -1,0 +1,13 @@
+{
+  "id": "fx_11-newsletter",
+  "threadId": "t_11-newsletter",
+  "from": "Dev Weekly <news@devweekly.example>",
+  "subject": "This week in JavaScript #412",
+  "date": "2026-08-09T09:00:00.000Z",
+  "body": "Top stories: React 20 RC, Bun 2.0, and the state of TypeScript. Read online.",
+  "expected": {
+    "prefilter": false,
+    "application": null,
+    "event": "other"
+  }
+}

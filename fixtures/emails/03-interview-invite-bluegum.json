@@ -1,0 +1,13 @@
+{
+  "id": "fx_03-interview-invite-bluegum",
+  "threadId": "t_03-interview-invite-bluegum",
+  "from": "Bluegum Bank Careers <bluegum@myworkday.com>",
+  "subject": "Interview invitation - Bluegum Bank Graduate Program",
+  "date": "2026-08-16T09:00:00.000Z",
+  "body": "Dear Sam,\n\nCongratulations! We would like to invite you to a first-round interview for the Software Engineer (Graduate / Junior) role at Bluegum Bank. Please pick a slot using the link below.\n\nSchedule: https://bluegum.myworkday.com/schedule/abc\n\nKind regards,\nBluegum Bank Talent Acquisition",
+  "expected": {
+    "prefilter": true,
+    "application": "Bluegum Bank",
+    "event": "interview_invite"
+  }
+}

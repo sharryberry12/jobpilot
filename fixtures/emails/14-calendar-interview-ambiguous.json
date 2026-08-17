@@ -1,0 +1,13 @@
+{
+  "id": "fx_14-calendar-interview-ambiguous",
+  "threadId": "t_14-calendar-interview-ambiguous",
+  "from": "Google Calendar <calendar-notification@google.com>",
+  "subject": "Invitation: Interview @ Thu 21 Aug 10:00 (Sam)",
+  "date": "2026-08-06T09:00:00.000Z",
+  "body": "You have been invited to the following event.\n\nInterview\nWhen: Thu 21 Aug 2026 10:00 - 10:45\nJoining info: meet.google.com/xyz\n\nGoing? Yes / No / Maybe",
+  "expected": {
+    "prefilter": true,
+    "application": null,
+    "event": "interview_invite"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "fx_15-rejection-kestrel-ats",
+  "threadId": "t_15-rejection-kestrel-ats",
+  "from": "Kestrel Robotics <no-reply@ashbyhq.com>",
+  "subject": "Your application to Kestrel Robotics",
+  "date": "2026-08-05T09:00:00.000Z",
+  "body": "Hi Sam,\n\nThank you for applying for the Software Engineer, Platform position at Kestrel Robotics. Unfortunately we won't be progressing your application this time.\n\nKestrel Robotics Recruiting",
+  "expected": {
+    "prefilter": true,
+    "application": "Kestrel Robotics",
+    "event": "rejected"
+  }
+}

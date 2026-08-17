@@ -1,0 +1,13 @@
+{
+  "id": "fx_16-assessment-sundial-takehome",
+  "threadId": "t_16-assessment-sundial-takehome",
+  "from": "Sundial Media Hiring <hiring@sundialmedia.example>",
+  "subject": "Take-home exercise - React Developer (Contract)",
+  "date": "2026-08-04T09:00:00.000Z",
+  "body": "Hi Sam,\n\nAs discussed, here is the take-home exercise for the React Developer (Contract) role at Sundial Media. Please return it within a week.\n\nBrief: https://sundialmedia.example/brief\n\nThanks!",
+  "expected": {
+    "prefilter": true,
+    "application": "Sundial Media",
+    "event": "assessment_invite"
+  }
+}

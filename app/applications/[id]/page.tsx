@@ -9,7 +9,8 @@ import { Timeline } from "@/components/timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getApplication, getTimeline } from "@/lib/applications";
 import { hasApiKey } from "@/lib/claude";
-import { STATUS_META, fmtDate, statusLabel } from "@/lib/format";
+import { listEmailsForApplication } from "@/lib/emails";
+import { STATUS_META, fmtDate, fmtDateTime, statusLabel } from "@/lib/format";
 import { getMasterProfile, getRequirements, getStoredFit, listResumeVersions } from "@/lib/resume";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ export default async function ApplicationDetailPage({ params }: PageProps<"/appl
   const fit = getStoredFit(app.fitJson);
   const versions = listResumeVersions(id);
   const apiKey = hasApiKey();
+  const matchedEmails = listEmailsForApplication(id);
 
   return (
     <div className="space-y-6">
@@ -93,9 +95,26 @@ export default async function ApplicationDetailPage({ params }: PageProps<"/appl
               <CardDescription>Inbox messages linked to this application.</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                None yet. Emails appear here once Gmail sync is connected.
-              </p>
+              {matchedEmails.length === 0 ? (
+                <p className="text-sm text-muted-foreground">None yet. Emails appear here once Gmail sync is connected.</p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {matchedEmails.map((e) => (
+                    <li key={e.id} className="py-2">
+                      <details>
+                        <summary className="cursor-pointer text-sm">
+                          <span className="font-medium">{e.subject || "(no subject)"}</span>
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {fmtDateTime(e.receivedAt)} · {e.eventType ?? "unclassified"} · {e.decidedBy ?? "pending"}
+                          </span>
+                        </summary>
+                        <div className="mt-1 text-xs text-muted-foreground">{e.fromAddr}</div>
+                        <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-2 font-sans text-xs">{e.bodyText}</pre>
+                      </details>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </CardContent>
           </Card>
 

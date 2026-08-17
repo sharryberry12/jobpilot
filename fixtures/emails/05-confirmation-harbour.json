@@ -1,0 +1,13 @@
+{
+  "id": "fx_05-confirmation-harbour",
+  "threadId": "t_05-confirmation-harbour",
+  "from": "Harbour Health <no-reply@jobs.lever.co>",
+  "subject": "We received your application - Full-Stack Developer",
+  "date": "2026-08-01T09:00:00.000Z",
+  "body": "Hi Sam,\n\nThank you for applying to Harbour Health. We have received your application for Full-Stack Developer and will be in touch if there is a match.\n\nHarbour Health Recruiting",
+  "expected": {
+    "prefilter": true,
+    "application": "Harbour Health",
+    "event": "received_confirmation"
+  }
+}

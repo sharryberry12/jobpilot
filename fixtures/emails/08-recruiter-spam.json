@@ -1,0 +1,13 @@
+{
+  "id": "fx_08-recruiter-spam",
+  "threadId": "t_08-recruiter-spam",
+  "from": "Alex Recruiter <alex@talentfinders.example>",
+  "subject": "Exciting opportunity: Senior React Developer",
+  "date": "2026-08-11T09:00:00.000Z",
+  "body": "Hi Sam, I came across your profile and think you'd be a great fit for a Senior React Developer role with one of my clients. Are you open to a chat?\n\nAlex",
+  "expected": {
+    "prefilter": false,
+    "application": null,
+    "event": "other"
+  }
+}

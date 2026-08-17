@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { KanbanBoard } from "@/components/kanban/board";
+import { SyncButton } from "@/components/sync-button";
 import { Button } from "@/components/ui/button";
 import { listApplications } from "@/lib/applications";
+import { hasGmailToken } from "@/lib/gmail";
+import { lastSyncAt, maybeSyncStale } from "@/lib/scheduler";
 import { ACTIVE_STATUSES } from "@/lib/stateMachine";
 
 export default function BoardPage() {
+  // SPEC §2: dashboard load kicks a sync when the last run is stale (fire-and-forget).
+  maybeSyncStale();
   const apps = listApplications();
   const active = apps.filter((a) => ACTIVE_STATUSES.includes(a.status)).length;
   const ghosted = apps.filter((a) => a.ghosted).length;
@@ -21,6 +26,7 @@ export default function BoardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <SyncButton lastSyncAt={lastSyncAt()} gmailConnected={hasGmailToken()} />
           <Button asChild>
             <Link href="/applications/new">
               <Plus data-icon="inline-start" />
