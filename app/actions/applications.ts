@@ -19,6 +19,8 @@ import type { Status } from "@/lib/stateMachine";
 import { extractRequirements } from "@/lib/ai/jd";
 import { hasApiKey } from "@/lib/claude";
 import { getMasterProfile, refreshFit, saveRequirements } from "@/lib/resume";
+import { config } from "@/lib/config";
+import { buildPlanForApplication } from "@/lib/planner";
 
 /**
  * SPEC §6.2: JD extraction runs on application create. Best-effort — a failed
@@ -35,7 +37,14 @@ async function extractAndScore(applicationId: string, jdText: string): Promise<v
       return;
     }
     saveRequirements(applicationId, result.data);
-    refreshFit(applicationId);
+    const fit = refreshFit(applicationId);
+    // SPEC §6.4: a weak fit triggers a learning plan. Runs in the background so
+    // creation stays fast; the detail page shows it once it lands.
+    if (fit && fit.score !== null && fit.score < config.planThreshold && fit.gaps.length > 0) {
+      void buildPlanForApplication(applicationId).then((r) => {
+        if (!r.ok) console.warn(`[createApplication] plan generation skipped: ${r.error}`);
+      });
+    }
   } catch (err) {
     console.error("[createApplication] JD extraction failed", err);
   }

@@ -9,7 +9,7 @@ The full build specification lives in [`SPEC.md`](./SPEC.md). Build phases are e
 | P1 | Tracker: schema, state machine, CRUD, kanban, detail page, seed | done |
 | P2 | Resume engine: upload/parse, JD extraction, fit score, tailoring + DOCX | done |
 | P3 | Email pipeline: Gmail auth, sync scheduler, prefilter, classifier, review queue | done |
-| P4 | Skill planner | pending |
+| P4 | Skill planner | done |
 | P5 | Polish: notifications, backup, settings, empty states | pending |
 
 ## Stack
@@ -57,13 +57,17 @@ One-time setup is in SPEC.md §8 (Google Cloud project → Gmail API → Desktop
 
 Sync runs in-process: on boot, when the board loads and the last run is older than `POLL_MINUTES`, on a `POLL_MINUTES` timer, and from the **Sync now** button. Each run: `history.list` since the stored history id (falling back to a 60-day `messages.list`) → skip known ids → prefilter (ATS domains, company domains, company mentions, subject keywords) → store → Haiku classifier → auto-apply when confidence ≥ `AUTO_APPLY_CONFIDENCE` **and** the state machine allows the move, otherwise the review queue. Corrections made in `/review` are fed back to the classifier as few-shot examples. Ghost flags are refreshed every run.
 
+## Skill planner
+
+When an application's fit is below `PLAN_THRESHOLD` at create time (or via **Build me a plan**), Sonnet turns the gap list into a roadmap: gaps ranked by impact for the role family, one free-first resource per gap, and 1–2 scoped portfolio projects each with a definition of done and a pre-written evidence bullet. Marking a project done (confirm dialog) appends that bullet and any new skills to the master profile and recomputes fit for open applications in the same role family. All plans are listed at `/plans`.
+
 ## Layout
 
 ```
 app/            Next.js routes (board, applications, review, resume, plans, settings) + server actions
 components/     UI (kanban board, forms, timeline, shadcn/ui primitives)
 lib/            db schema + connection, state machine, data access, validation, config
-lib/ai/         Claude features: resume normaliser, JD extractor, tailor, email classifier (+ offline mocks)
+lib/ai/         Claude features: resume normaliser, JD extractor, tailor, email classifier, planner (+ offline mocks)
 lib/sync.ts     the sync run; lib/gmail.ts Gmail access; lib/prefilter.ts; lib/scheduler.ts + instrumentation.ts
 fixtures/       resume + tailoring fixtures; fixtures/emails/*.json synthetic inbox for eval + --fixtures sync
 drizzle/        SQL migrations (committed)

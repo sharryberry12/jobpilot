@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, Ghost, MapPin } from "lucide-react";
 import { FitCard } from "@/components/fit-card";
+import { PlanCard } from "@/components/plan-card";
 import { StatusControls } from "@/components/status-controls";
 import { TailorPanel } from "@/components/tailor-panel";
 import { Timeline } from "@/components/timeline";
@@ -11,6 +12,7 @@ import { getApplication, getTimeline } from "@/lib/applications";
 import { hasApiKey } from "@/lib/claude";
 import { listEmailsForApplication } from "@/lib/emails";
 import { STATUS_META, fmtDate, fmtDateTime, statusLabel } from "@/lib/format";
+import { getPlanForApplication } from "@/lib/plans";
 import { getMasterProfile, getRequirements, getStoredFit, listResumeVersions } from "@/lib/resume";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +34,7 @@ export default async function ApplicationDetailPage({ params }: PageProps<"/appl
   const versions = listResumeVersions(id);
   const apiKey = hasApiKey();
   const matchedEmails = listEmailsForApplication(id);
+  const plan = getPlanForApplication(id);
 
   return (
     <div className="space-y-6">
@@ -169,9 +172,24 @@ export default async function ApplicationDetailPage({ params }: PageProps<"/appl
           <Card>
             <CardHeader>
               <CardTitle>Learning plan</CardTitle>
+              <CardDescription>Closes the gaps for this role; finishing a project grows your master profile.</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">No plan for this application.</p>
+              <PlanCard
+                applicationId={app.id}
+                plan={plan}
+                canGenerate={Boolean(master && requirements && fit && fit.gaps.length > 0)}
+                generateHint={
+                  !master
+                    ? "Upload your master resume first."
+                    : !requirements
+                      ? "Extract requirements first — the plan is built from the gap list."
+                      : fit && fit.gaps.length === 0
+                        ? "No gaps for this role — nothing to plan."
+                        : "No plan yet. Build one from the current gap list."
+                }
+                hasApiKey={apiKey}
+              />
             </CardContent>
           </Card>
         </aside>

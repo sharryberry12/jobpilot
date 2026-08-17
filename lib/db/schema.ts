@@ -164,6 +164,10 @@ export const planItems = sqliteTable(
     completedAt: text("completed_at"),
     /** Preserves the planner ordering. */
     position: integer("position").notNull().default(0),
+    /** Projects: what "done" means. */
+    definitionOfDone: text("definition_of_done"),
+    /** JSON string[] of skill names/slugs this item adds to the master profile when completed. */
+    skillsJson: text("skills_json"),
   },
   (t) => [index("plan_items_plan_idx").on(t.planId)],
 );
