@@ -54,3 +54,6 @@ credentials.json
 
 # keep the example env file
 !.env.example
+
+# backups (npm run backup)
+/backups/

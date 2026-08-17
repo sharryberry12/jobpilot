@@ -94,13 +94,20 @@ function domainMatchesCompany(domain: string, app: PrefilterApplication): boolea
   return labels.some((label) => label.length >= 4 && candidates.includes(label));
 }
 
-export function prefilter(email: PrefilterEmail, activeApps: PrefilterApplication[]): PrefilterResult {
+export type PrefilterOptions = { extraAtsDomains?: string[] };
+
+export function prefilter(
+  email: PrefilterEmail,
+  activeApps: PrefilterApplication[],
+  opts: PrefilterOptions = {},
+): PrefilterResult {
   const reasons: string[] = [];
   const domain = senderDomain(email.fromAddr);
   const subject = email.subject.toLowerCase();
   const body = email.bodyText.toLowerCase();
 
-  const ats = ATS_DOMAINS.find((d) => domainMatches(domain, d));
+  const atsList = [...ATS_DOMAINS, ...(opts.extraAtsDomains ?? []).map((d) => d.trim().toLowerCase()).filter(Boolean)];
+  const ats = atsList.find((d) => domainMatches(domain, d));
   if (ats) reasons.push(`ATS domain ${ats}`);
 
   for (const app of activeApps) {

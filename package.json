@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "gmail:auth": "tsx scripts/gmail-auth.ts",
     "sync": "tsx scripts/sync.ts",
-    "eval:classifier": "tsx scripts/eval-classifier.ts"
+    "eval:classifier": "tsx scripts/eval-classifier.ts",
+    "backup": "tsx scripts/backup.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",
@@ -24,6 +25,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@google-cloud/local-auth": "^3.0.1",
+    "adm-zip": "^0.6.0",
     "better-sqlite3": "^13.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -49,6 +51,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/adm-zip": "^0.5.8",
     "@types/better-sqlite3": "^9.6.0",
     "@types/html-to-text": "^9.0.4",
     "@types/node": "^20",

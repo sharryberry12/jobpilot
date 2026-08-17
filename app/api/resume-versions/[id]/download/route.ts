@@ -9,7 +9,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/resume-versions
   const { id } = await ctx.params;
   const version = getResumeVersion(id);
   if (!version?.docxPath) return new Response("Not found", { status: 404 });
-  const abs = path.resolve(process.cwd(), version.docxPath);
+  const abs = path.resolve(/*turbopackIgnore: true*/ process.cwd(), version.docxPath);
   if (!abs.startsWith(OUT_DIR)) return new Response("Forbidden", { status: 403 });
   try {
     const buf = await fs.readFile(abs);

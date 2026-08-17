@@ -10,7 +10,7 @@ The full build specification lives in [`SPEC.md`](./SPEC.md). Build phases are e
 | P2 | Resume engine: upload/parse, JD extraction, fit score, tailoring + DOCX | done |
 | P3 | Email pipeline: Gmail auth, sync scheduler, prefilter, classifier, review queue | done |
 | P4 | Skill planner | done |
-| P5 | Polish: notifications, backup, settings, empty states | pending |
+| P5 | Polish: notifications, backup, settings, empty states | done |
 
 ## Stack
 
@@ -42,6 +42,7 @@ The dev server binds to `127.0.0.1` only. All data lives in `data/` (SQLite, upl
 | `npm run db:generate` | Generate a new Drizzle migration after editing `lib/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations (also happens automatically on app boot) |
 | `npm run db:studio` | Drizzle Studio for poking at the database |
+| `npm run backup` | Consistent SQLite snapshot + `data/uploads` + `data/out` → `backups/jobpilot-YYYYMMDD-HHmm.zip` |
 
 ## AI features and the API key
 
@@ -60,6 +61,14 @@ Sync runs in-process: on boot, when the board loads and the last run is older th
 ## Skill planner
 
 When an application's fit is below `PLAN_THRESHOLD` at create time (or via **Build me a plan**), Sonnet turns the gap list into a roadmap: gaps ranked by impact for the role family, one free-first resource per gap, and 1–2 scoped portfolio projects each with a definition of done and a pre-written evidence bullet. Marking a project done (confirm dialog) appends that bullet and any new skills to the master profile and recomputes fit for open applications in the same role family. All plans are listed at `/plans`.
+
+## Settings, notifications, backups
+
+`/settings` edits the thresholds (`POLL_MINUTES`, `AUTO_APPLY_CONFIDENCE`, `PLAN_THRESHOLD`, `GHOST_DAYS`), extra ATS domains, and the optional [ntfy.sh](https://ntfy.sh) topic; `.env` provides the defaults and saved values override them at runtime (stored in the `kv` table, applied on the next sync). With a topic set, JobPilot pushes a note whenever a sync auto-applies status changes and sends one daily digest after `DIGEST_HOUR`. `npm run backup` zips a consistent database snapshot with your uploads and generated resumes.
+
+## Running it day to day
+
+`npm run dev` while building; once stable, `npm run build && npm start` (both bind to 127.0.0.1). Auto-start it at login (Windows Startup shortcut / macOS Login Item / systemd user unit) and the first sync after launch catches up via the Gmail history API. Everything — mail text, resume, tokens — stays on this machine (`data/`, `secrets/`).
 
 ## Layout
 

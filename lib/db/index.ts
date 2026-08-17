@@ -25,7 +25,7 @@ export function openDatabase(dbPath: string = process.env.DB_PATH ?? DEFAULT_DB_
   db: Db;
   sqlite: Database.Database;
 } {
-  const resolved = dbPath === ":memory:" ? dbPath : path.resolve(process.cwd(), dbPath);
+  const resolved = dbPath === ":memory:" ? dbPath : path.resolve(/*turbopackIgnore: true*/ process.cwd(), dbPath);
   if (resolved !== ":memory:") {
     fs.mkdirSync(path.dirname(resolved), { recursive: true });
   }

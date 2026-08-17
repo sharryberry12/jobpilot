@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { config } from "@/lib/config";
+import { SettingsForm } from "@/components/settings-form";
+import { hasApiKey, isMockMode, MODELS } from "@/lib/claude";
 import { getKv } from "@/lib/emails";
 import { fmtDateTime } from "@/lib/format";
 import { gmailStatus } from "@/lib/gmail";
 import { KV_LAST_HISTORY_ID, KV_LAST_SYNC_AT, KV_LAST_SYNC_SUMMARY } from "@/lib/sync";
+import { getSettings } from "@/lib/settings";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -18,25 +20,28 @@ function Row({ k, v, mono = false }: { k: string; v: string; mono?: boolean }) {
 }
 
 export default function SettingsPage() {
-  const rows: Array<[string, string]> = [
-    ["POLL_MINUTES", String(config.pollMinutes)],
-    ["AUTO_APPLY_CONFIDENCE", String(config.autoApplyConfidence)],
-    ["PLAN_THRESHOLD", String(config.planThreshold)],
-    ["GHOST_DAYS", String(config.ghostDays)],
-    ["ANTHROPIC_API_KEY", config.anthropicApiKey ? "set" : "not set"],
-    ["GOOGLE_CREDENTIALS_PATH", config.googleCredentialsPath],
-  ];
   const gmail = gmailStatus();
   const lastSync = getKv(KV_LAST_SYNC_AT);
   const lastHistory = getKv(KV_LAST_HISTORY_ID);
   const lastSummary = getKv(KV_LAST_SYNC_SUMMARY);
+  const settings = getSettings();
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">Thresholds and integrations. Values come from .env for now.</p>
+        <p className="text-sm text-muted-foreground">Thresholds, integrations and notifications. .env supplies the defaults; values saved here override them.</p>
       </div>
-      <Card className="max-w-xl">
+
+      <Card className="max-w-3xl">
+        <CardHeader>
+          <CardTitle>Thresholds & notifications</CardTitle>
+          <CardDescription>Applied on the next sync — no restart needed.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SettingsForm settings={settings} />
+        </CardContent>
+      </Card>
+      <Card className="max-w-3xl">
         <CardHeader>
           <CardTitle>Gmail connection</CardTitle>
           <CardDescription>Read-only scope (gmail.readonly). Token cached locally in secrets/.</CardDescription>
@@ -52,19 +57,16 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="max-w-xl">
+      <Card className="max-w-3xl">
         <CardHeader>
-          <CardTitle>Current configuration</CardTitle>
-          <CardDescription>Edit .env and restart the app to change these.</CardDescription>
+          <CardTitle>AI</CardTitle>
+          <CardDescription>Models come from .env (CLAUDE_FAST_MODEL / CLAUDE_SMART_MODEL).</CardDescription>
         </CardHeader>
         <CardContent>
           <dl className="divide-y divide-border text-sm">
-            {rows.map(([k, v]) => (
-              <div key={k} className="flex items-center justify-between py-2">
-                <dt className="font-mono text-xs text-muted-foreground">{k}</dt>
-                <dd className="font-mono text-xs">{v}</dd>
-              </div>
-            ))}
+            <Row k="ANTHROPIC_API_KEY" v={hasApiKey() && !isMockMode() ? "set" : isMockMode() ? "mock mode (JOBPILOT_MOCK_AI=1)" : "not set"} />
+            <Row k="classification / extraction" v={MODELS.fast} />
+            <Row k="tailoring / plans" v={MODELS.smart} />
           </dl>
         </CardContent>
       </Card>

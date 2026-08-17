@@ -202,7 +202,7 @@ export async function deleteResumeVersionAction(versionId: string): Promise<{ ok
   const version = getResumeVersion(id.data);
   if (!version) return { ok: false, error: "Not found" };
   if (version.docxPath) {
-    await fs.rm(path.join(process.cwd(), version.docxPath), { force: true }).catch(() => undefined);
+    await fs.rm(path.join(/*turbopackIgnore: true*/ process.cwd(), version.docxPath), { force: true }).catch(() => undefined);
   }
   deleteResumeVersion(id.data);
   revalidatePath(`/applications/${version.applicationId}`);

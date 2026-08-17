@@ -2,25 +2,44 @@
  * In-process sync scheduler (SPEC §2): a sync on app boot, on dashboard load
  * when the last run is older than POLL_MINUTES, and on a POLL_MINUTES timer
  * while the app is open. Guarded on globalThis so dev HMR never doubles timers.
+ * The interval is re-read from settings on every tick, so changes apply live.
  */
-import { config } from "./config";
 import { getKv } from "./emails";
+import { maybeSendDailyDigest } from "./notify";
+import { getSettings } from "./settings";
 import { KV_LAST_SYNC_AT, isSyncRunning, runSync } from "./sync";
 
-type SchedulerGlobal = typeof globalThis & { __jobpilotScheduler?: { timer: NodeJS.Timeout; boot: NodeJS.Timeout } };
+type SchedulerGlobal = typeof globalThis & { __jobpilotScheduler?: { timer: NodeJS.Timeout | null; started: boolean } };
 const g = globalThis as SchedulerGlobal;
 
 const BOOT_DELAY_MS = 5_000;
 
+function pollMs(): number {
+  return Math.max(1, getSettings().pollMinutes) * 60_000;
+}
+
+async function tick(trigger: "boot" | "timer"): Promise<void> {
+  try {
+    await runSync({ trigger });
+    await maybeSendDailyDigest();
+  } catch (err) {
+    console.error("[scheduler] tick failed:", err);
+  } finally {
+    if (g.__jobpilotScheduler) {
+      const t = setTimeout(() => void tick("timer"), pollMs());
+      t.unref();
+      g.__jobpilotScheduler.timer = t;
+    }
+  }
+}
+
 export function startScheduler(): void {
-  if (g.__jobpilotScheduler) return;
-  const intervalMs = Math.max(1, config.pollMinutes) * 60_000;
-  const boot = setTimeout(() => void runSync({ trigger: "boot" }), BOOT_DELAY_MS);
-  const timer = setInterval(() => void runSync({ trigger: "timer" }), intervalMs);
+  if (g.__jobpilotScheduler?.started) return;
+  g.__jobpilotScheduler = { timer: null, started: true };
+  const boot = setTimeout(() => void tick("boot"), BOOT_DELAY_MS);
   boot.unref();
-  timer.unref();
-  g.__jobpilotScheduler = { timer, boot };
-  console.log(`[scheduler] sync every ${config.pollMinutes} min; first run in ${BOOT_DELAY_MS / 1000}s`);
+  g.__jobpilotScheduler.timer = boot;
+  console.log(`[scheduler] sync every ${getSettings().pollMinutes} min; first run in ${BOOT_DELAY_MS / 1000}s`);
 }
 
 export function lastSyncAt(): string | null {
@@ -31,8 +50,7 @@ export function lastSyncAt(): string | null {
 export function maybeSyncStale(): boolean {
   if (isSyncRunning()) return false;
   const last = lastSyncAt();
-  const staleMs = Math.max(1, config.pollMinutes) * 60_000;
-  if (last && Date.now() - new Date(last).getTime() < staleMs) return false;
+  if (last && Date.now() - new Date(last).getTime() < pollMs()) return false;
   void runSync({ trigger: "stale-load" });
   return true;
 }

@@ -6,13 +6,14 @@
 import { and, desc, eq, inArray, notInArray } from "drizzle-orm";
 import { classifyEmail, eventToStatus, type Classification } from "./ai/classify";
 import { listActiveApplications, transitionApplication } from "./applications";
-import { config } from "./config";
 import { getDb } from "./db";
 import { applications, statusEvents } from "./db/schema";
 import { enqueueReview, getKv, insertEmail, knownEmailIds, recentCorrections, setEmailDecision, setKv } from "./emails";
 import { fetchMessage, getGmailClient, hasGmailToken, listNewMessageIds, type FetchedEmail, type ListResult } from "./gmail";
 import { prefilter } from "./prefilter";
 import { PIPELINE_STATUSES, canTransition } from "./stateMachine";
+import { getSettings } from "./settings";
+import { notifyAutoChanges } from "./notify";
 
 export type SyncTrigger = "boot" | "timer" | "stale-load" | "manual" | "cli";
 
@@ -103,11 +104,12 @@ async function doRun({ trigger, source }: { trigger: SyncTrigger; source?: Email
 
       const active = listActiveApplications();
       const corrections = recentCorrections(10);
+      const ctx: ProcessContext = { active, corrections, changes: [] };
       for (const id of fresh) {
         try {
           const email = await source.fetch(id);
           if (!email) continue;
-          const outcome = await processEmail(email, { active, corrections });
+          const outcome = await processEmail(email, ctx);
           if (outcome !== "dropped") summary.kept += 1;
           if (outcome === "auto") summary.autoApplied += 1;
           else if (outcome === "queued") summary.queued += 1;
@@ -120,6 +122,7 @@ async function doRun({ trigger, source }: { trigger: SyncTrigger; source?: Email
         }
       }
       if (source.name === "gmail" && listed.historyId) setKv(KV_LAST_HISTORY_ID, listed.historyId);
+      if (ctx.changes.length > 0) await notifyAutoChanges(ctx.changes);
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -145,6 +148,8 @@ export type ProcessOutcome = "dropped" | "auto" | "queued" | "linked" | "noise";
 type ProcessContext = {
   active: ReturnType<typeof listActiveApplications>;
   corrections: ReturnType<typeof recentCorrections>;
+  /** Auto-applied changes this run, for the optional push notification. */
+  changes: { company: string; roleTitle: string; from: string; to: string }[];
 };
 
 /**
@@ -154,7 +159,9 @@ type ProcessContext = {
  * and never stored.
  */
 export async function processEmail(email: FetchedEmail, ctx: ProcessContext): Promise<ProcessOutcome> {
-  const pf = prefilter(email, ctx.active.map((a) => ({ id: a.id, company: a.company, companyDomains: a.companyDomains })));
+  const pf = prefilter(email, ctx.active.map((a) => ({ id: a.id, company: a.company, companyDomains: a.companyDomains })), {
+    extraAtsDomains: getSettings().extraAtsDomains,
+  });
   if (!pf.keep) return "dropped";
 
   insertEmail(email);
@@ -173,7 +180,7 @@ export async function processEmail(email: FetchedEmail, ctx: ProcessContext): Pr
 }
 
 export function applyClassification(emailId: string, c: Classification, ctx: ProcessContext): ProcessOutcome {
-  const threshold = config.autoApplyConfidence;
+  const threshold = getSettings().autoApplyConfidence;
   const confident = c.confidence >= threshold;
   const app = c.application_id ? ctx.active.find((a) => a.id === c.application_id) ?? null : null;
 
@@ -194,6 +201,7 @@ export function applyClassification(emailId: string, c: Classification, ctx: Pro
       const moved = transitionApplication(app.id, implied, "email", { emailId, note: `Email: ${c.evidence.slice(0, 120)}` });
       if (moved.ok) {
         setEmailDecision(emailId, { applicationId: app.id, eventType: c.event, confidence: c.confidence, decidedBy: "auto" });
+        ctx.changes.push({ company: app.company, roleTitle: app.roleTitle, from: app.status, to: implied });
         // Keep the in-memory view of active apps current for later emails in this run.
         const idx = ctx.active.findIndex((a) => a.id === app.id);
         if (idx >= 0) ctx.active[idx] = moved.application;
@@ -214,7 +222,7 @@ export function applyClassification(emailId: string, c: Classification, ctx: Pro
  */
 export function refreshGhostFlags(): number {
   const db = getDb();
-  const cutoff = new Date(Date.now() - config.ghostDays * 86_400_000).toISOString();
+  const cutoff = new Date(Date.now() - getSettings().ghostDays * 86_400_000).toISOString();
   const rows = db
     .select({ id: applications.id, ghosted: applications.ghosted, status: applications.status })
     .from(applications)

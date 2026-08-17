@@ -32,8 +32,8 @@ export type GmailStatus = {
 };
 
 export function gmailStatus(): GmailStatus {
-  const credentialsPath = path.resolve(process.cwd(), config.googleCredentialsPath);
-  const tokenPath = path.resolve(process.cwd(), config.googleTokenPath);
+  const credentialsPath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), config.googleCredentialsPath);
+  const tokenPath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), config.googleTokenPath);
   return {
     credentialsPresent: fs.existsSync(credentialsPath),
     tokenPresent: fs.existsSync(tokenPath),
@@ -47,7 +47,7 @@ export function hasGmailToken(): boolean {
 }
 
 export function getGmailClient(): gmail_v1.Gmail {
-  const tokenPath = path.resolve(process.cwd(), config.googleTokenPath);
+  const tokenPath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), config.googleTokenPath);
   const raw = JSON.parse(fs.readFileSync(tokenPath, "utf8"));
   const auth = google.auth.fromJSON(raw);
   return google.gmail({ version: "v1", auth: auth as Parameters<typeof google.gmail>[0]["auth"] });
