@@ -69,7 +69,7 @@ export function isMockMode(): boolean {
   return process.env.JOBPILOT_MOCK_AI === "1";
 }
 
-/** Strip ```json fences and parse. Used only if the SDK's own parse yields nothing. */
+/** Strip ```json fences and parse the structured-output text. */
 export function parseJsonLoose(text: string): unknown {
   const stripped = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
   try {
@@ -96,7 +96,11 @@ export async function callStructured<S extends z.ZodType>(
     return { ok: false, code: "missing_api_key", error: "ANTHROPIC_API_KEY is not set (.env)" };
   }
   try {
-    const response = await getClient().messages.parse({
+    // Streamed, not messages.parse(): the SDK refuses non-streaming requests whose
+    // max_tokens could outlast its 10-minute HTTP window (tailoring asks for 24k).
+    // Structured output still applies via output_config; we validate the final text
+    // against the zod schema below exactly as the parse() helper would.
+    const stream = getClient().messages.stream({
       model: opts.model,
       max_tokens: opts.maxTokens ?? 8192,
       system: opts.system,
@@ -107,6 +111,7 @@ export async function callStructured<S extends z.ZodType>(
       },
       ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
     });
+    const response = await stream.finalMessage();
 
     const usage: ClaudeUsage = {
       inputTokens: response.usage.input_tokens,
@@ -121,11 +126,8 @@ export async function callStructured<S extends z.ZodType>(
       return { ok: false, code: "truncated", error: "Response was cut off (max_tokens). Try again or shorten the input." };
     }
 
-    if (response.parsed_output !== null && response.parsed_output !== undefined) {
-      return { ok: true, data: response.parsed_output as z.infer<S>, usage };
-    }
-
-    // Defensive fallback: pull text, strip fences, validate against the schema.
+    // Pull the text (structured output constrains it to schema-shaped JSON),
+    // strip any fences, and validate against the schema.
     const text = response.content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
       .map((b) => b.text)
