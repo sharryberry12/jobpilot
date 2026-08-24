@@ -10,14 +10,16 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx scripts/migrate.ts",
+    "db:migrate": "tsx --env-file-if-exists=.env scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
-    "seed": "tsx scripts/seed.ts",
+    "seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
     "typecheck": "tsc --noEmit",
-    "gmail:auth": "tsx scripts/gmail-auth.ts",
-    "sync": "tsx scripts/sync.ts",
-    "eval:classifier": "tsx scripts/eval-classifier.ts",
-    "backup": "tsx scripts/backup.ts"
+    "gmail:auth": "tsx --env-file-if-exists=.env scripts/gmail-auth.ts",
+    "sync": "tsx --env-file-if-exists=.env scripts/sync.ts",
+    "eval:classifier": "tsx --env-file-if-exists=.env scripts/eval-classifier.ts",
+    "reclassify": "tsx --env-file-if-exists=.env scripts/reclassify.ts",
+    "leads:backfill": "tsx --env-file-if-exists=.env scripts/leads-backfill.ts",
+    "backup": "tsx --env-file-if-exists=.env scripts/backup.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",

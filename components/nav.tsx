@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BriefcaseBusiness, FileText, Inbox, LayoutDashboard, Map, Settings } from "lucide-react";
+import { BriefcaseBusiness, FileText, Inbox, LayoutDashboard, Map, Radar, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 const LINKS = [
   { href: "/", label: "Board", icon: LayoutDashboard },
   { href: "/review", label: "Review", icon: Inbox },
+  { href: "/leads", label: "Leads", icon: Radar },
   { href: "/resume", label: "Resume", icon: FileText },
   { href: "/plans", label: "Plans", icon: Map },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
-export function Nav({ pendingReviews }: { pendingReviews: number }) {
+export function Nav({ pendingReviews, newLeads }: { pendingReviews: number; newLeads: number }) {
   const pathname = usePathname();
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -40,6 +41,11 @@ export function Nav({ pendingReviews }: { pendingReviews: number }) {
                 {href === "/review" && pendingReviews > 0 && (
                   <Badge variant="destructive" className="ml-0.5 h-4 min-w-4 px-1 text-[10px]">
                     {pendingReviews}
+                  </Badge>
+                )}
+                {href === "/leads" && newLeads > 0 && (
+                  <Badge variant="secondary" className="ml-0.5 h-4 min-w-4 px-1 text-[10px]">
+                    {newLeads}
                   </Badge>
                 )}
               </Link>

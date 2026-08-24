@@ -8,6 +8,7 @@ export async function syncNowAction(): Promise<SyncSummary> {
   const summary = await runSync({ trigger: "manual" });
   revalidatePath("/");
   revalidatePath("/review");
+  revalidatePath("/leads");
   revalidatePath("/settings");
   return summary;
 }

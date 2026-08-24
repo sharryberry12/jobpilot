@@ -6,7 +6,7 @@
  *  - timestamps are ISO-8601 text (human-readable, sorts lexicographically).
  *  - JSON blobs are text columns named *_json; typed accessors live in lib/.
  */
-import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 const isoNow = () => new Date().toISOString();
 
@@ -172,6 +172,38 @@ export const planItems = sqliteTable(
   (t) => [index("plan_items_plan_idx").on(t.planId)],
 );
 
+/**
+ * Job leads: candidate roles harvested from job-alert emails (LinkedIn digests).
+ * Deterministic parse, deduped on (source, external_id). A lead is NOT an
+ * application — "Start application" prefills /applications/new and the tracker
+ * still begins at `applied` (SPEC §5).
+ */
+export const leads = sqliteTable(
+  "leads",
+  {
+    id: text("id").primaryKey(),
+    source: text("source", { enum: ["linkedin"] }).notNull(),
+    /** Provider job id (LinkedIn: the numeric id in /jobs/view/<id>/). */
+    externalId: text("external_id").notNull(),
+    title: text("title").notNull(),
+    company: text("company").notNull(),
+    location: text("location"),
+    url: text("url").notNull(),
+    /** First email the lead was seen in (informational; not a FK so email cleanup never cascades here). */
+    emailId: text("email_id"),
+    firstSeenAt: text("first_seen_at").notNull(),
+    lastSeenAt: text("last_seen_at").notNull(),
+    status: text("status", { enum: ["new", "dismissed", "applied"] }).notNull().default("new"),
+    applicationId: text("application_id").references(() => applications.id, { onDelete: "set null" }),
+    createdAt: text("created_at").notNull().$defaultFn(isoNow),
+    updatedAt: text("updated_at").notNull().$defaultFn(isoNow),
+  },
+  (t) => [
+    uniqueIndex("leads_source_external_idx").on(t.source, t.externalId),
+    index("leads_status_idx").on(t.status, t.lastSeenAt),
+  ],
+);
+
 /** Small key/value store: last_history_id, last_sync_at, settings overrides. */
 export const kv = sqliteTable("kv", {
   key: text("key").primaryKey(),
@@ -193,3 +225,6 @@ export type Requirement = typeof requirements.$inferSelect;
 export type Plan = typeof plans.$inferSelect;
 export type PlanItem = typeof planItems.$inferSelect;
 export type KvRow = typeof kv.$inferSelect;
+export type Lead = typeof leads.$inferSelect;
+export type LeadStatus = Lead["status"];
+export type LeadSource = Lead["source"];

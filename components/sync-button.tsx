@@ -21,7 +21,7 @@ export function SyncButton({ lastSyncAt, gmailConnected }: { lastSyncAt: string 
         toast.error(`Sync finished with ${s.errors.length} error(s)`, { description: s.errors[0] });
       } else {
         toast.success(`Synced: ${s.fetched} fetched, ${s.kept} kept`, {
-          description: `${s.autoApplied} auto-applied · ${s.queued} queued for review · ${s.linked} linked`,
+          description: `${s.autoApplied} auto-applied · ${s.queued} queued for review · ${s.linked} linked${s.leads ? ` · ${s.leads} new leads` : ""}`,
         });
       }
       router.refresh();

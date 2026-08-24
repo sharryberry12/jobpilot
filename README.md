@@ -11,6 +11,7 @@ The full build specification lives in [`SPEC.md`](./SPEC.md). Build phases are e
 | P3 | Email pipeline: Gmail auth, sync scheduler, prefilter, classifier, review queue | done |
 | P4 | Skill planner | done |
 | P5 | Polish: notifications, backup, settings, empty states | done |
+| P6 | Job leads from LinkedIn alert emails (`/leads`), classifier re-run for failed rows | done |
 
 ## Stack
 
@@ -25,7 +26,7 @@ npm run dev                 # http://127.0.0.1:3000 — schema is created on fir
 npm run seed                # optional: 5 sample applications
 ```
 
-The dev server binds to `127.0.0.1` only. All data lives in `data/` (SQLite, uploads, generated resumes) and `secrets/` (Google OAuth credentials + token); both are gitignored.
+The dev server binds to `127.0.0.1` only. All data lives in `data/` (SQLite, uploads, generated resumes) and `secrets/` (Google OAuth credentials + token); both are gitignored. The `tsx` scripts below load `.env` too (`--env-file-if-exists`), so `ANTHROPIC_API_KEY` set there works for both the app and the CLI.
 
 ## Scripts
 
@@ -39,6 +40,8 @@ The dev server binds to `127.0.0.1` only. All data lives in `data/` (SQLite, upl
 | `npm run gmail:auth` | One-time Google OAuth (desktop loopback flow, `gmail.readonly` only) → `secrets/token.json` |
 | `npm run sync` | One-shot sync cycle against your inbox; `-- --fixtures` runs the pipeline over `fixtures/emails/` instead |
 | `npm run eval:classifier` | Prefilter + classifier over the email fixtures; prints expected vs got and accuracy |
+| `npm run reclassify` | Re-run the classifier over review-queue rows that were only queued because classification failed (e.g. mail synced before the API key existed); `-- --limit=N` to cap a run |
+| `npm run leads:backfill` | Scan already-synced mail for LinkedIn job cards and upsert them as leads (idempotent; new mail is harvested by every sync) |
 | `npm run db:generate` | Generate a new Drizzle migration after editing `lib/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations (also happens automatically on app boot) |
 | `npm run db:studio` | Drizzle Studio for poking at the database |
@@ -58,6 +61,10 @@ One-time setup is in SPEC.md §8 (Google Cloud project → Gmail API → Desktop
 
 Sync runs in-process: on boot, when the board loads and the last run is older than `POLL_MINUTES`, on a `POLL_MINUTES` timer, and from the **Sync now** button. Each run: `history.list` since the stored history id (falling back to a 60-day `messages.list`) → skip known ids → prefilter (ATS domains, company domains, company mentions, subject keywords) → store → Haiku classifier → auto-apply when confidence ≥ `AUTO_APPLY_CONFIDENCE` **and** the state machine allows the move, otherwise the review queue. Corrections made in `/review` are fed back to the classifier as few-shot examples. Ghost flags are refreshed every run.
 
+## Job leads
+
+Every sync also parses LinkedIn job-alert and recommendation emails (`jobalerts-noreply@` / `jobs-noreply@linkedin.com`) into **leads** — deterministic regex over the "Title / Company / Location / View job" cards, deduplicated by LinkedIn job id, no model call. `/leads` lists them newest-sighting first with a text filter; **Start application** opens `/applications/new` with company, role, location and link prefilled (paste the JD and it enters the tracker as usual, and the lead is marked applied and linked); **Dismiss** hides a lead (restorable). Leads are not applications and never touch the state machine. `npm run leads:backfill` covers mail synced before this feature existed.
+
 ## Skill planner
 
 When an application's fit is below `PLAN_THRESHOLD` at create time (or via **Build me a plan**), Sonnet turns the gap list into a roadmap: gaps ranked by impact for the role family, one free-first resource per gap, and 1–2 scoped portfolio projects each with a definition of done and a pre-written evidence bullet. Marking a project done (confirm dialog) appends that bullet and any new skills to the master profile and recomputes fit for open applications in the same role family. All plans are listed at `/plans`.
@@ -73,11 +80,11 @@ When an application's fit is below `PLAN_THRESHOLD` at create time (or via **Bui
 ## Layout
 
 ```
-app/            Next.js routes (board, applications, review, resume, plans, settings) + server actions
+app/            Next.js routes (board, applications, review, leads, resume, plans, settings) + server actions
 components/     UI (kanban board, forms, timeline, shadcn/ui primitives)
 lib/            db schema + connection, state machine, data access, validation, config
 lib/ai/         Claude features: resume normaliser, JD extractor, tailor, email classifier, planner (+ offline mocks)
-lib/sync.ts     the sync run; lib/gmail.ts Gmail access; lib/prefilter.ts; lib/scheduler.ts + instrumentation.ts
+lib/sync.ts     the sync run + reclassify; lib/gmail.ts Gmail access; lib/prefilter.ts; lib/leads.ts LinkedIn job-card parser; lib/scheduler.ts + instrumentation.ts
 fixtures/       resume + tailoring fixtures; fixtures/emails/*.json synthetic inbox for eval + --fixtures sync
 drizzle/        SQL migrations (committed)
 scripts/        one-shot CLIs: seed, migrate (sync/gmail:auth/eval arrive with P3)

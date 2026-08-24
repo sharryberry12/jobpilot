@@ -18,6 +18,7 @@ import {
 import type { Status } from "@/lib/stateMachine";
 import { extractRequirements } from "@/lib/ai/jd";
 import { hasApiKey } from "@/lib/claude";
+import { markLeadApplied } from "@/lib/leads";
 import { getMasterProfile, refreshFit, saveRequirements } from "@/lib/resume";
 import { getSettings } from "@/lib/settings";
 import { buildPlanForApplication } from "@/lib/planner";
@@ -75,9 +76,23 @@ export async function createApplicationAction(
       values: raw,
     };
   }
+  linkLead(raw.leadId, id);
   await extractAndScore(id, parsed.data.jdText);
   revalidatePath("/");
   redirect(`/applications/${id}`);
+}
+
+/** Started from /leads: mark the lead applied and point it at the new application. Best-effort. */
+function linkLead(leadId: string | undefined, applicationId: string): void {
+  if (!leadId) return;
+  const parsed = idSchema.safeParse(leadId);
+  if (!parsed.success) return;
+  try {
+    markLeadApplied(parsed.data, applicationId);
+    revalidatePath("/leads");
+  } catch (err) {
+    console.warn("[createApplication] could not link lead", leadId, err);
+  }
 }
 
 export async function updateApplicationAction(

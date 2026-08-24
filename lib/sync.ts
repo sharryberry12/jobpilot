@@ -3,12 +3,13 @@
  * Runs in-process (boot, stale dashboard load, timer, Sync-now, CLI). Idempotent
  * on Gmail message id; single-flight so overlapping triggers share one run.
  */
-import { and, desc, eq, inArray, notInArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, notInArray } from "drizzle-orm";
 import { classifyEmail, eventToStatus, type Classification } from "./ai/classify";
 import { listActiveApplications, transitionApplication } from "./applications";
 import { getDb } from "./db";
-import { applications, statusEvents } from "./db/schema";
-import { enqueueReview, getKv, insertEmail, knownEmailIds, recentCorrections, setEmailDecision, setKv } from "./emails";
+import { applications, reviewQueue, statusEvents } from "./db/schema";
+import { enqueueReview, getEmail, getKv, insertEmail, knownEmailIds, recentCorrections, setEmailDecision, setKv } from "./emails";
+import { extractLeadsFromEmail } from "./leads";
 import { fetchMessage, getGmailClient, hasGmailToken, listNewMessageIds, type FetchedEmail, type ListResult } from "./gmail";
 import { prefilter } from "./prefilter";
 import { PIPELINE_STATUSES, canTransition } from "./stateMachine";
@@ -35,6 +36,8 @@ export type SyncSummary = {
   queued: number;
   linked: number;
   noise: number;
+  /** New job leads harvested from job-alert digests this run. */
+  leads: number;
   ghostedChanged: number;
   skippedReason?: string;
   errors: string[];
@@ -81,6 +84,7 @@ async function doRun({ trigger, source }: { trigger: SyncTrigger; source?: Email
     queued: 0,
     linked: 0,
     noise: 0,
+    leads: 0,
     ghostedChanged: 0,
     errors: [],
   };
@@ -104,7 +108,7 @@ async function doRun({ trigger, source }: { trigger: SyncTrigger; source?: Email
 
       const active = listActiveApplications();
       const corrections = recentCorrections(10);
-      const ctx: ProcessContext = { active, corrections, changes: [] };
+      const ctx: ProcessContext = { active, corrections, changes: [], leadsFound: 0 };
       for (const id of fresh) {
         try {
           const email = await source.fetch(id);
@@ -121,6 +125,7 @@ async function doRun({ trigger, source }: { trigger: SyncTrigger; source?: Email
           console.error(`[sync] failed on message ${id}:`, err);
         }
       }
+      summary.leads = ctx.leadsFound;
       if (source.name === "gmail" && listed.historyId) setKv(KV_LAST_HISTORY_ID, listed.historyId);
       if (ctx.changes.length > 0) await notifyAutoChanges(ctx.changes);
     }
@@ -148,6 +153,7 @@ async function doRun({ trigger, source }: { trigger: SyncTrigger; source?: Email
   }
   console.log(
     `[sync] ${trigger}/${summary.source}/${summary.mode}: fetched ${summary.fetched} / kept ${summary.kept} / auto-applied ${summary.autoApplied} / queued ${summary.queued} / linked ${summary.linked} / noise ${summary.noise}` +
+      (summary.leads ? ` / new leads ${summary.leads}` : "") +
       (summary.ghostedChanged ? ` / ghost flags changed ${summary.ghostedChanged}` : "") +
       (summary.skippedReason ? ` (${summary.skippedReason})` : "") +
       (summary.errors.length ? ` / errors ${summary.errors.length}` : ""),
@@ -162,6 +168,8 @@ type ProcessContext = {
   corrections: ReturnType<typeof recentCorrections>;
   /** Auto-applied changes this run, for the optional push notification. */
   changes: { company: string; roleTitle: string; from: string; to: string }[];
+  /** New leads harvested this run (job-alert digests). */
+  leadsFound: number;
 };
 
 /**
@@ -177,6 +185,7 @@ export async function processEmail(email: FetchedEmail, ctx: ProcessContext): Pr
   if (!pf.keep) return "dropped";
 
   insertEmail(email);
+  harvestLeads(email, ctx);
 
   const result = await classifyEmail(
     email,
@@ -225,6 +234,99 @@ export function applyClassification(emailId: string, c: Classification, ctx: Pro
   setEmailDecision(emailId, { applicationId: null, eventType: c.event, confidence: c.confidence, decidedBy: null });
   enqueueReview(emailId, { applicationId: app?.id ?? null, event: c.event, confidence: c.confidence });
   return "queued";
+}
+
+/** Job-alert digests carry candidate roles; parsing is deterministic and must never break a sync. */
+function harvestLeads(email: FetchedEmail, ctx: ProcessContext): void {
+  try {
+    ctx.leadsFound += extractLeadsFromEmail(email).inserted;
+  } catch (err) {
+    console.warn(`[sync] lead extraction failed for ${email.id}:`, err instanceof Error ? err.message : err);
+  }
+}
+
+export type ReclassifySummary = {
+  scanned: number;
+  reclassified: number;
+  auto: number;
+  linked: number;
+  noise: number;
+  queued: number;
+  failed: number;
+  errors: string[];
+};
+
+/**
+ * Re-run the classifier over review-queue rows that exist only because the
+ * classifier itself failed (missing key, rate limit, …): pending, no proposal,
+ * confidence 0 — the fallback written by processEmail. Each stale row is replaced
+ * by whatever the fresh classification decides (auto-apply, link, noise, or a real
+ * low-confidence queue item). A stale row is removed only after its replacement
+ * decision has been written, and every item runs in its own try/catch, so a
+ * failure (classifier error, SQLITE_BUSY, …) leaves that row for the next run
+ * and never aborts the batch. Safe alongside a timer sync: a sync only touches
+ * emails it has not seen before, so the two never act on the same row.
+ */
+export async function reclassifyFallbacks(
+  opts: { limit?: number; onItem?: (line: string) => void } = {},
+): Promise<ReclassifySummary> {
+  const summary: ReclassifySummary = { scanned: 0, reclassified: 0, auto: 0, linked: 0, noise: 0, queued: 0, failed: 0, errors: [] };
+  const db = getDb();
+  const stale = db
+    .select()
+    .from(reviewQueue)
+    .where(
+      and(
+        eq(reviewQueue.status, "pending"),
+        eq(reviewQueue.confidence, 0),
+        eq(reviewQueue.proposedEvent, "other"),
+        isNull(reviewQueue.proposedApplicationId),
+      ),
+    )
+    .orderBy(reviewQueue.createdAt)
+    .all();
+  const items = opts.limit ? stale.slice(0, opts.limit) : stale;
+  const ctx: ProcessContext = { active: listActiveApplications(), corrections: recentCorrections(10), changes: [], leadsFound: 0 };
+
+  for (const item of items) {
+    summary.scanned += 1;
+    try {
+      const email = getEmail(item.emailId);
+      if (!email) {
+        // Orphan (email row gone): the queue item can never be resolved — drop it.
+        db.delete(reviewQueue).where(eq(reviewQueue.id, item.id)).run();
+        continue;
+      }
+      const result = await classifyEmail(
+        { fromAddr: email.fromAddr, subject: email.subject, receivedAt: email.receivedAt, bodyText: email.bodyText },
+        ctx.active.map((a) => ({ id: a.id, company: a.company, roleTitle: a.roleTitle, status: a.status, appliedAt: a.appliedAt })),
+        ctx.corrections,
+      );
+      if (!result.ok) {
+        summary.failed += 1;
+        summary.errors.push(`${email.id}: ${result.code} ${result.error}`);
+        opts.onItem?.(`✗ ${email.subject.slice(0, 60)} — ${result.code}`);
+        continue;
+      }
+      // Write the replacement decision first; only then remove the fallback row.
+      // If applyClassification throws, the stale row survives and is retried next run.
+      const outcome = applyClassification(email.id, result.data, ctx);
+      db.delete(reviewQueue).where(eq(reviewQueue.id, item.id)).run();
+      summary.reclassified += 1;
+      if (outcome === "auto") summary.auto += 1;
+      else if (outcome === "linked") summary.linked += 1;
+      else if (outcome === "noise") summary.noise += 1;
+      else if (outcome === "queued") summary.queued += 1;
+      opts.onItem?.(`${outcome.padEnd(6)} ${Math.round(result.data.confidence * 100)}% ${result.data.event.padEnd(22)} ${email.subject.slice(0, 60)}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      summary.failed += 1;
+      summary.errors.push(`${item.emailId}: ${msg}`);
+      console.error(`[reclassify] failed on review item ${item.id}:`, err);
+    }
+  }
+  if (ctx.changes.length > 0) await notifyAutoChanges(ctx.changes);
+  return summary;
 }
 
 /**

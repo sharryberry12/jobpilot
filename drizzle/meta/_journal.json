@@ -15,6 +15,13 @@
       "when": 1786957821114,
       "tag": "0001_plan_item_details",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787108411879,
+      "tag": "0002_leads",
+      "breakpoints": true
     }
   ]
 }

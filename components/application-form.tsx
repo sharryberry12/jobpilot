@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 type Values = Partial<
-  Record<"company" | "roleTitle" | "jdText" | "sourceUrl" | "location" | "companyDomains" | "appliedAt", string>
+  Record<"company" | "roleTitle" | "jdText" | "sourceUrl" | "location" | "companyDomains" | "appliedAt" | "leadId", string>
 >;
 
 export function ApplicationForm({
@@ -30,6 +30,7 @@ export function ApplicationForm({
 
   return (
     <form action={formAction} className="space-y-5">
+      {values.leadId && <input type="hidden" name="leadId" value={values.leadId} />}
       {errors._form && (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {errors._form}

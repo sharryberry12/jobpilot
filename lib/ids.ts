@@ -11,6 +11,7 @@ export const ID_PREFIX = {
   requirement: "req",
   plan: "pl",
   planItem: "pi",
+  lead: "ld",
 } as const;
 
 export type IdKind = keyof typeof ID_PREFIX;
