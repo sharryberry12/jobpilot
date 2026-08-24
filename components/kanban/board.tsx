@@ -78,8 +78,17 @@ export function KanbanBoard({ initialItems }: { initialItems: ApplicationWithSta
     });
   }
 
+  // Stable id: dnd-kit otherwise numbers its aria-describedby element with a
+  // module-level counter, which drifts on the long-lived server process and
+  // causes a hydration mismatch on every board load after the first.
   return (
-    <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
+    <DndContext
+      id="kanban-board"
+      sensors={sensors}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
       <div className="flex gap-3 overflow-x-auto pb-4">
         {STATUSES.map((status) => (
           <Column key={status} status={status} items={byStatus[status]} activeId={activeId} />
