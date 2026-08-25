@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Lead, LeadStatus } from "@/lib/db/schema";
-import { fmtAgo } from "@/lib/format";
+import { TimeAgo } from "@/components/time-ago";
 import { cn } from "@/lib/utils";
 
 const TABS: { key: LeadStatus; label: string }[] = [
@@ -98,9 +98,15 @@ function LeadRow({ lead }: { lead: Lead }) {
     });
 
   const seen =
-    lead.firstSeenAt === lead.lastSeenAt
-      ? `seen ${fmtAgo(lead.lastSeenAt)}`
-      : `first seen ${fmtAgo(lead.firstSeenAt)} · again ${fmtAgo(lead.lastSeenAt)}`;
+    lead.firstSeenAt === lead.lastSeenAt ? (
+      <>
+        seen <TimeAgo iso={lead.lastSeenAt} />
+      </>
+    ) : (
+      <>
+        first seen <TimeAgo iso={lead.firstSeenAt} /> · again <TimeAgo iso={lead.lastSeenAt} />
+      </>
+    );
 
   return (
     <li className="grid gap-2 px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center">

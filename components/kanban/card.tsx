@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Ghost, MapPin } from "lucide-react";
 import type { ApplicationWithStatus } from "@/lib/applications";
-import { fmtAgo, fmtDate } from "@/lib/format";
+import { TimeAgo } from "@/components/time-ago";
+import { fmtDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { FitBadge } from "@/components/fit-badge";
 
@@ -38,7 +39,9 @@ export function ApplicationCard({
         <FitBadge score={app.fitScore} compact />
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-        <span title={fmtDate(app.appliedAt)}>Applied {fmtAgo(app.appliedAt)}</span>
+        <span title={fmtDate(app.appliedAt)}>
+          Applied <TimeAgo iso={app.appliedAt} />
+        </span>
         {app.location && (
           <span className="flex items-center gap-0.5">
             <MapPin className="size-3" />
